@@ -29,9 +29,16 @@ services:
 
   # Reranker: mismo software (TEI) pero otro modelo. Reordena los candidatos del
   # retrieval con más criterio y da una nota de relevancia para el umbral.
+  # Modelo configurable: por defecto uno ligero multilingüe que corre en cualquier
+  # equipo. En una máquina con más RAM (o GPU) se pone el grande vía RERANKER_MODEL
+  # en el .env (ver README). El backend no se entera: solo cambia qué modelo sirve TEI.
   reranker:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.7
-    command: ["--model-id", "BAAI/bge-reranker-v2-m3", "--max-batch-tokens", "4096"]
+    command:
+      - "--model-id"
+      - "${RERANKER_MODEL:-cross-encoder/mmarco-mMiniLMv2-L12-H384-v1}"
+      - "--max-batch-tokens"
+      - "4096"
     ports:
       - "8081:80"
     volumes:

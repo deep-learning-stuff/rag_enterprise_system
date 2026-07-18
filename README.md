@@ -92,6 +92,42 @@ cp .env.example .env
 
 Docker Compose lee `.env` automáticamente.
 
+## Modelos de IA (embeddings y reranker)
+
+Todo corre **en local**, sin llamar a APIs externas (privacidad). Dos modelos, servidos
+cada uno por su contenedor de [TEI](https://github.com/huggingface/text-embeddings-inference):
+
+- **Embeddings** (`embeddings`): `BAAI/bge-m3` — convierte cada chunk y cada pregunta en un
+  vector para la búsqueda por significado.
+- **Reranker** (`reranker`): reordena los candidatos recuperados por relevancia real y da la
+  nota con la que se decide la abstención ("no está en los documentos").
+
+### Cambiar el modelo del reranker
+
+Por defecto se usa un reranker **ligero** (`cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`,
+~0.5 GB) que arranca en cualquier equipo, **incluso con poca RAM**. En una máquina con más
+memoria (o con GPU) puedes usar el **grande**, más preciso, sin tocar código: solo cambia
+una variable en tu `.env`:
+
+```bash
+# .env
+RERANKER_MODEL=BAAI/bge-reranker-v2-m3
+```
+
+Luego recrea el servicio:
+
+```bash
+docker compose up -d --force-recreate reranker
+```
+
+> **Aviso de memoria:** el modelo grande necesita ~2.5 GB extra en Docker. Junto a los
+> embeddings no cabe en un Docker de ~8 GB (equipos de 16 GB de RAM): el contenedor se cae
+> por falta de memoria. Úsalo en equipos de 32 GB+ o con GPU. Puedes comprobar cuánta
+> memoria tiene tu Docker con `docker info --format '{{.MemTotal}}'`.
+
+El código no sabe qué modelo hay detrás (habla con el reranker por HTTP tras una
+abstracción): cambiar de modelo es solo cambiar qué sirve el contenedor.
+
 ## Estructura del proyecto
 
 ```

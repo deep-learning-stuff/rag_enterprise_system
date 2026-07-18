@@ -23,14 +23,18 @@ class Settings(BaseSettings):
     embedding_dim: int = 1024
 
     # Recuperación (Fase 4). Valores de arranque, ajustables.
-    retrieval_k: int = 30  # top-K por cada vía (vectorial y full-text) antes de fusionar
+    retrieval_k: int = (
+        30  # top-K por cada vía (vectorial y full-text) antes de fusionar
+    )
     final_n: int = 8  # cuántos candidatos se devuelven tras rerankear
     rrf_k: int = 60  # constante del Reciprocal Rank Fusion (estándar)
 
     # Rerank + umbral (Fase 4b). El reranker se sirve por HTTP (segundo TEI).
     reranker_url: str = "http://reranker:80"
-    rerank_pool: int = 20  # cuántos candidatos fusionados se pasan al reranker
-    relevance_threshold: float = 0.5  # score mínimo del reranker; por debajo → abstención
+    rerank_pool: int = 10  # cuántos candidatos fusionados se pasan al reranker
+    relevance_threshold: float = (
+        0.75  # score mínimo del reranker; por debajo → abstención
+    )
 
 
 settings = Settings()
