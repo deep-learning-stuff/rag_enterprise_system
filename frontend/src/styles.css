@@ -1,0 +1,336 @@
+/* Tokens del design-system del proyecto. Los componentes usan SIEMPRE variables. */
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --surface-2: #f1f0ed;
+  --border: #e4e3df;
+  --text: #1a1a19;
+  --text-muted: #6b6a66;
+  --accent: #e8590c;
+  --accent-hover: #c74a08;
+  --accent-soft: #fce7d6;
+  --success: #16794c;
+  --warning: #ca8a04;
+  --danger: #c0362c;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-float: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  --font-sans: Inter, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141210;
+    --surface: #1f1c18;
+    --surface-2: #26221d;
+    --border: #322d27;
+    --text: #f2f0ec;
+    --text-muted: #9a958c;
+    --accent: #f0691f;
+    --accent-hover: #ff7a2e;
+    --accent-soft: #3a2416;
+    --success: #3fb076;
+    --warning: #e0a93b;
+    --danger: #e06055;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 48px 24px;
+}
+
+/* Panel: superficie plana + borde 1px, sin sombra (regla del design-system). */
+.panel {
+  width: 100%;
+  max-width: 760px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.panel__subtitle {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Botón primario: acento plano, sin sombra, hover más oscuro. También como <label>. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  font: inherit;
+  font-weight: 500;
+  color: #ffffff;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: var(--accent-hover);
+}
+
+/* Tabla de documentos: densa y legible. */
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tabla th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabla td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Filas clicables para inspeccionar sus chunks. */
+.fila {
+  cursor: pointer;
+}
+
+.fila:hover td {
+  background: var(--surface-2);
+}
+
+.fila--sel td {
+  background: var(--accent-soft);
+}
+
+/* Panel de inspección de chunks. */
+.chunks {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.chunks__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.chunks__count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 1px 8px;
+}
+
+.chunk-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chunk {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: var(--surface-2);
+}
+
+.chunk__meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.chunk__text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* Pill de estado: fondo suave del color semántico + texto del color pleno. */
+.pill {
+  display: inline-block;
+  font-size: 13px;
+  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.pill--success {
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  color: var(--success);
+}
+
+.pill--warning {
+  background: color-mix(in srgb, var(--warning) 18%, transparent);
+  color: var(--warning);
+}
+
+.pill--danger {
+  background: color-mix(in srgb, var(--danger) 15%, transparent);
+  color: var(--danger);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 24px 0;
+  text-align: center;
+}
+
+/* Detalle técnico del error en mono, como el resto de datos técnicos. */
+.error-detail {
+  margin: 0 0 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--danger);
+}
+
+/* Buscador */
+.buscador {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.buscador__input {
+  flex: 1;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.buscador__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.buscador__input::placeholder {
+  color: var(--text-muted);
+}
+
+.resultados {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resultado {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: var(--surface-2);
+}
+
+.resultado__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.resultado__meta .score {
+  color: var(--text);
+}
+
+/* Chips que indican por qué vía se recuperó el chunk (vectorial / full-text). */
+.via {
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+}
+
+.via--vec {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.via--txt {
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  color: var(--success);
+}
+
+/* Nota de relevancia del reranker: es el score que de verdad importa. */
+.via--rerank {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 500;
+}
+
+.resultado__text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}

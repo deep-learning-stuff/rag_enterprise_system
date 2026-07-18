@@ -1,0 +1,77 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rag}
+      POSTGRES_DB: ${POSTGRES_DB:-rag}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rag} -d ${POSTGRES_DB:-rag}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Servidor de embeddings: sirve BGE-M3 por HTTP. El backend lo llama; no lo
+  # exponemos al host salvo el puerto 8080 para poder depurarlo con curl.
+  embeddings:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.7
+    # max-batch-tokens bajo (4096) para que el warmup en CPU sea rápido. Es un ajuste
+    # de rendimiento/arranque, no de calidad; en GPU/producción se sube.
+    command: ["--model-id", "BAAI/bge-m3", "--max-batch-tokens", "4096"]
+    ports:
+      - "8080:80"
+    volumes:
+      - tei_data:/data  # cachea el modelo descargado (~2.3 GB) entre reinicios
+
+  # Reranker: mismo software (TEI) pero otro modelo. Reordena los candidatos del
+  # retrieval con más criterio y da una nota de relevancia para el umbral.
+  reranker:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.7
+    command: ["--model-id", "BAAI/bge-reranker-v2-m3", "--max-batch-tokens", "4096"]
+    ports:
+      - "8081:80"
+    volumes:
+      - reranker_data:/data
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rag}:${POSTGRES_PASSWORD:-rag}@db:5432/${POSTGRES_DB:-rag}
+      EMBEDDINGS_URL: http://embeddings:80
+      RERANKER_URL: http://reranker:80
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      embeddings:
+        condition: service_started
+      reranker:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+      # Cachea la descarga del tokenizer de BGE-M3 para no repetirla en cada reinicio.
+      - hf_cache:/root/.cache/huggingface
+
+  frontend:
+    build: ./frontend
+    environment:
+      # Nombre del servicio backend dentro de la red de compose (para el proxy de Vite)
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  pgdata:
+  hf_cache:
+  tei_data:
+  reranker_data:
