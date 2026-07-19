@@ -44,6 +44,7 @@ class SearchResultOut(BaseModel):
     page_end: int | None
     texto: str
     rerank_score: float | None
+    cosine: float | None
     rrf_score: float
     vector_rank: int | None
     text_rank: int | None

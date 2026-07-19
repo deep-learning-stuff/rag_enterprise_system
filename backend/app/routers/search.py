@@ -21,6 +21,7 @@ def search(body: SearchQuery, db: Session = Depends(get_db)) -> list[SearchResul
             page_end=c.chunk.page_end,
             texto=c.chunk.texto,
             rerank_score=c.rerank_score,
+            cosine=c.cosine,
             rrf_score=c.rrf_score,
             vector_rank=c.vector_rank,
             text_rank=c.text_rank,

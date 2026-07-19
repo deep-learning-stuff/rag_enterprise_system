@@ -86,6 +86,9 @@ function Buscador() {
                       relevancia {r.rerank_score.toFixed(3)}
                     </span>
                   )}
+                  {r.cosine != null && (
+                    <span className="via via--cos">coseno {r.cosine.toFixed(3)}</span>
+                  )}
                   {r.vector_rank != null && (
                     <span className="via via--vec">vec #{r.vector_rank}</span>
                   )}

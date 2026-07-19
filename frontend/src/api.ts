@@ -43,6 +43,7 @@ export type SearchResult = {
   page_end: number | null;
   texto: string;
   rerank_score: number | null;
+  cosine: number | null;
   rrf_score: number;
   vector_rank: number | null;
   text_rank: number | null;

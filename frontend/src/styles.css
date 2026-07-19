@@ -321,6 +321,12 @@ body {
   color: var(--success);
 }
 
+.via--cos {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
 /* Nota de relevancia del reranker: es el score que de verdad importa. */
 .via--rerank {
   background: var(--accent);

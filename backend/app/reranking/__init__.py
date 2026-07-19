@@ -7,6 +7,8 @@ from app.config import settings
 from app.reranking.base import Reranker
 from app.reranking.tei import TEIReranker
 
-reranker: Reranker = TEIReranker(settings.reranker_url)
+reranker: Reranker = TEIReranker(
+    settings.reranker_url, window_tokens=settings.reranker_window_tokens
+)
 
 __all__ = ["Reranker", "reranker"]

@@ -10,6 +10,7 @@ Pasos:
 
 from dataclasses import dataclass
 
+import numpy as np
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -28,6 +29,17 @@ class Candidate:
     text_rank: int | None
     rrf_score: float
     rerank_score: float | None = None
+    cosine: float | None = None
+
+
+def _cosine(a: list[float], b) -> float:
+    """Similitud coseno entre el vector de la consulta y el embedding de un chunk."""
+    if b is None:
+        return 0.0  # chunk sin embedding (solo llegó por full-text): no verificable
+    va = np.asarray(a, dtype=float)
+    vb = np.asarray(b, dtype=float)
+    denom = np.linalg.norm(va) * np.linalg.norm(vb)
+    return float(va @ vb / denom) if denom else 0.0
 
 
 def vector_search(db: Session, query_vec: list[float], k: int) -> list[Chunk]:
@@ -95,11 +107,16 @@ def hybrid_search(db: Session, query: str) -> list[Candidate]:
             text_rank=text_rank.get(c.id),
             rrf_score=scores[c.id],
             rerank_score=score,
+            cosine=_cosine(query_vec, c.embedding),
         )
         for c, score in zip(pool, rerank_scores)
     ]
 
-    # Umbral de abstención + orden final por relevancia del reranker.
+    # Abstención por el score del reranker (que se calcula por ventanas, así que "lee"
+    # el chunk entero). Con esa señal, relevante y basura quedan muy separados, de modo
+    # que un umbral único basta. El `cosine` se conserva en el candidato solo como traza
+    # de depuración; no decide la abstención (su margen es demasiado estrecho para ser
+    # fiable, ver config).
     relevantes = [c for c in candidates if c.rerank_score >= settings.relevance_threshold]
     relevantes.sort(key=lambda c: c.rerank_score, reverse=True)
     return relevantes[: settings.final_n]

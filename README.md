@@ -128,6 +128,35 @@ docker compose up -d --force-recreate reranker
 El código no sabe qué modelo hay detrás (habla con el reranker por HTTP tras una
 abstracción): cambiar de modelo es solo cambiar qué sirve el contenedor.
 
+### Reranker ligero y longitud: rerank por ventanas
+
+El reranker ligero solo procesa **512 tokens** por texto, pero los chunks son de ~700.
+Para no perder la cola de los chunks largos, el cliente **trocea cada chunk en ventanas**
+que caben en ese límite (`RERANKER_WINDOW_TOKENS`, ~450 por defecto), puntúa todas y se
+queda con el **máximo**. Así el reranker "lee" el chunk entero, esté donde esté la parte
+relevante. `truncate: true` se mantiene solo como red de seguridad.
+
+Por qué importa: sin esto, una pregunta cuya respuesta cae al final de un chunk largo se
+infravaloraba (el reranker no la veía) y el sistema se abstenía por error. Con las ventanas,
+la relevancia se calcula sobre todo el texto.
+
+Notas:
+
+- **Solo afecta al paso de rerank.** El embedding (BGE-M3) ya procesaba el chunk entero
+  (hasta 8192 tokens); la búsqueda vectorial nunca perdió nada.
+- Con el **modelo grande** (`bge-reranker-v2-m3`, 8192 tokens) cada chunk cabe en una sola
+  ventana: sube `RERANKER_WINDOW_TOKENS` por env (p.ej. 7000) y no se trocea.
+
+### Abstención (cuándo responde y cuándo dice "no está en los documentos")
+
+Tras el rerank por ventanas, la relevancia separa muy bien lo que está en los documentos de
+lo que no (relevante ≥ ~0.8, ruido ≤ ~0.05). Por eso la abstención usa **un único umbral**
+sobre el score del reranker (`RELEVANCE_THRESHOLD`, 0.5): por debajo → no se responde y la
+consulta se registrará como *gap*. Es robusto al crecer la base de documentos, porque el
+reranker juzga la relevancia real de cada par pregunta-chunk, no depende de cuántos haya.
+El coseno se sigue mostrando en la respuesta como traza de depuración, pero **no** decide la
+abstención (su margen entre relevante y ruido es demasiado estrecho para ser fiable).
+
 ## Estructura del proyecto
 
 ```

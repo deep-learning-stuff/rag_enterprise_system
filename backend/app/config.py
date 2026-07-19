@@ -32,9 +32,18 @@ class Settings(BaseSettings):
     # Rerank + umbral (Fase 4b). El reranker se sirve por HTTP (segundo TEI).
     reranker_url: str = "http://reranker:80"
     rerank_pool: int = 10  # cuántos candidatos fusionados se pasan al reranker
-    relevance_threshold: float = (
-        0.75  # score mínimo del reranker; por debajo → abstención
-    )
+    # Tamaño de ventana (tokens de passage) al rerankear. El reranker ligero solo "ve"
+    # ~512 tokens, así que cada chunk se trocea en ventanas y se puntúa por el máximo:
+    # así "lee" el chunk entero aunque la respuesta esté al final (sin esto, el truncado
+    # infravalora la cola). Con el modelo grande (8192) se puede subir por env.
+    reranker_window_tokens: int = 450
+
+    # Umbral de abstención sobre el score del reranker: por debajo → gap ("no está en
+    # los documentos"). Con el rerank por ventanas, la señal separa limpio (relevante
+    # >= ~0.8, basura <= ~0.05), así que un umbral único basta y es robusto a escala
+    # (el reranker juzga relevancia real por par consulta-chunk, no depende de cuántos
+    # documentos haya). Valor de arranque, ajustable.
+    relevance_threshold: float = 0.5
 
 
 settings = Settings()
