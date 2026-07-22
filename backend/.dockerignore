@@ -1,0 +1,6 @@
+# No enviar al build de Docker artefactos locales ni datos.
+__pycache__
+*.pyc
+.venv
+# Ficheros subidos: son datos de runtime (van montados por volumen), no de la imagen.
+storage

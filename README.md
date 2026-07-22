@@ -94,7 +94,8 @@ Docker Compose lee `.env` automáticamente.
 
 ## Modelos de IA (embeddings y reranker)
 
-Todo corre **en local**, sin llamar a APIs externas (privacidad). Dos modelos, servidos
+Embeddings y reranker corren **en local**, sin llamar a APIs externas (privacidad).
+Dos modelos, servidos
 cada uno por su contenedor de [TEI](https://github.com/huggingface/text-embeddings-inference):
 
 - **Embeddings** (`embeddings`): `BAAI/bge-m3` — convierte cada chunk y cada pregunta en un
@@ -156,6 +157,31 @@ consulta se registrará como *gap*. Es robusto al crecer la base de documentos, 
 reranker juzga la relevancia real de cada par pregunta-chunk, no depende de cuántos haya.
 El coseno se sigue mostrando en la respuesta como traza de depuración, pero **no** decide la
 abstención (su margen entre relevante y ruido es demasiado estrecho para ser fiable).
+
+## Generación (Fase 5): respuesta grounded con LLM en la nube
+
+`POST /answer` genera la respuesta a partir de los chunks recuperados. El LLM recibe
+**solo** esos chunks y devuelve un JSON `{answered, answer, citations}`; el backend
+valida que cada cita apunte a un chunk que sí estaba en el contexto (cita inválida →
+se trata como no respondido). Si el retrieval no supera el umbral, ni se llama al LLM.
+
+El proveedor es **configurable por `.env`**, como el reranker:
+
+```bash
+# .env
+LLM_PROVIDER=gemini          # o "openai"
+LLM_MODEL=                   # vacío = default (gemini-2.5-flash / gpt-5-mini)
+GEMINI_API_KEY=...           # https://aistudio.google.com/apikey
+```
+
+> **Aviso:** la capa gratuita de Gemini **no permite uso comercial en la UE** y Google
+> puede usar los datos enviados. Solo para desarrollo con datos de prueba; en
+> producción, cambiar a OpenAI (`LLM_PROVIDER=openai` + `OPENAI_API_KEY`) o a la capa
+> de pago de Gemini. El código no cambia: solo el `.env`.
+
+Cuando `answered` es `false`, el campo `reason` distingue el motivo (`sin_candidatos`,
+`llm_abstuvo`, `citas_invalidas`, `salida_invalida`) — es la base del futuro registro
+de gaps.
 
 ## Estructura del proyecto
 

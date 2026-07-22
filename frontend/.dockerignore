@@ -1,0 +1,5 @@
+# No enviar al build de Docker lo que la imagen genera por sí misma o no necesita.
+# Sin esto, un `npm install` hecho en local mete ~60MB de node_modules en el
+# contexto de build y lo ralentiza sin aportar nada (la imagen instala el suyo).
+node_modules
+dist

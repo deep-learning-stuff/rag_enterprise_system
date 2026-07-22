@@ -58,3 +58,45 @@ export async function buscar(query: string): Promise<SearchResult[]> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
+
+export type AnswerResult = {
+  answered: boolean;
+  answer: string | null;
+  reason: string | null;
+  citations: SearchResult[];
+};
+
+export async function preguntar(query: string): Promise<AnswerResult> {
+  const res = await fetch("/answer", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) {
+    // El backend manda el motivo en `detail` (503 falta API key, 502 proveedor caído).
+    const detail = await res.json().then((d) => d.detail).catch(() => null);
+    throw new Error(detail ?? `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+export type PreguntaGap = {
+  id: number;
+  pregunta: string;
+  fecha: string;
+};
+
+export type Gap = {
+  id: number;
+  pregunta_representativa: string;
+  n_ocurrencias: number;
+  primera_vez: string;
+  ultima_vez: string;
+  preguntas: PreguntaGap[];
+};
+
+export async function listarGaps(): Promise<Gap[]> {
+  const res = await fetch("/gaps");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}

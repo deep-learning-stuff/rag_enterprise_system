@@ -47,5 +47,22 @@ class Settings(BaseSettings):
     # más chunks compitiendo, los scores bajan). Valor calibrado, ajustable.
     relevance_threshold: float = 0.15
 
+    # Generación (Fase 5). LLM en la nube, configurable por proveedor igual que el
+    # reranker: cambiar de proveedor/modelo es cambiar el .env, no el código.
+    # - "gemini": capa gratuita en desarrollo (NO válida para uso comercial en la UE;
+    #   al pasar a producción con empresas, cambiar de proveedor o a la capa de pago).
+    # - "openai": de pago desde el primer token, sin esa restricción.
+    llm_provider: str = "gemini"  # "gemini" | "openai"
+    llm_model: str = ""  # vacío = modelo por defecto del proveedor (ver generation/)
+    gemini_api_key: str = ""
+    openai_api_key: str = ""
+    llm_timeout: float = 60.0
+
+    # Agrupado de gaps (fase siguiente): distancia coseno máxima para que una pregunta
+    # sin respuesta se sume a un gap existente en vez de abrir uno nuevo (~0.08 equivale
+    # a similitud ~0.92). Punto de arranque, NO calibrado con datos reales todavía (a
+    # diferencia de `relevance_threshold`) — reajustar cuando haya gaps de verdad.
+    gap_max_distance: float = 0.08
+
 
 settings = Settings()

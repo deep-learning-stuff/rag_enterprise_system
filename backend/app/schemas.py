@@ -48,3 +48,37 @@ class SearchResultOut(BaseModel):
     rrf_score: float
     vector_rank: int | None
     text_rank: int | None
+
+
+class PreguntaGapOut(BaseModel):
+    """Una de las preguntas literales absorbidas por un gap."""
+
+    id: int
+    pregunta: str
+    fecha: datetime
+
+
+class GapOut(BaseModel):
+    """Gap: grupo de preguntas sin respuesta que son, en esencia, la misma pregunta."""
+
+    id: int
+    pregunta_representativa: str
+    n_ocurrencias: int
+    primera_vez: datetime
+    ultima_vez: datetime
+    preguntas: list[PreguntaGapOut]
+
+
+class AnswerOut(BaseModel):
+    """Respuesta grounded (Fase 5). Si `answered` es False, `reason` dice por qué:
+
+    - "sin_candidatos": ningún chunk superó el umbral de relevancia (gap claro).
+    - "llm_abstuvo": había candidatos pero el modelo no encontró la respuesta en ellos.
+    - "citas_invalidas": el modelo respondió pero citando chunks fuera del contexto.
+    - "salida_invalida": el modelo no devolvió el JSON del contrato.
+    """
+
+    answered: bool
+    answer: str | None
+    reason: str | None
+    citations: list[SearchResultOut]

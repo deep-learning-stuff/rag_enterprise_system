@@ -55,6 +55,11 @@ services:
       # Tamaño de ventana de rerank. Debe ir acorde al modelo que sirve el reranker:
       # ~450 con el ligero (512 tokens), ~7000 con bge-reranker-v2-m3 (8192).
       RERANKER_WINDOW_TOKENS: ${RERANKER_WINDOW_TOKENS:-450}
+      # Generación (Fase 5): LLM en la nube, configurable por .env (ver .env.example).
+      LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
+      LLM_MODEL: ${LLM_MODEL:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:

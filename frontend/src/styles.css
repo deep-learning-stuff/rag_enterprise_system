@@ -50,19 +50,126 @@ body {
   color: var(--text);
 }
 
-.page {
+/* Layout: sidebar fija a la izquierda + área de contenido con la pantalla activa. */
+.app {
+  display: flex;
   min-height: 100vh;
+}
+
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sidebar__brand {
+  padding: 0 12px;
+}
+
+.sidebar__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.sidebar__subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.nav__item:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* Activo/selección → acento (mapeo del design-system). */
+.nav__item--activa {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.nav__item--activa:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 32px 24px;
+}
+
+.pantalla {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 24px;
-  padding: 48px 24px;
+}
+
+.pantalla[hidden] {
+  display: none;
+}
+
+/* En pantallas estrechas la sidebar pasa a barra superior. */
+@media (max-width: 720px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav {
+    flex-direction: row;
+  }
 }
 
 /* Panel: superficie plana + borde 1px, sin sombra (regla del design-system). */
 .panel {
   width: 100%;
-  max-width: 760px;
+  max-width: 860px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -93,6 +200,7 @@ body {
 .btn {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   padding: 10px 16px;
   font: inherit;
   font-weight: 500;
@@ -339,4 +447,112 @@ body {
   font-size: 13px;
   line-height: 1.5;
   white-space: pre-wrap;
+}
+
+/* Respuesta grounded (Fase 5). Borde izquierdo semántico: verde si hay respuesta,
+   ámbar si abstención (mapeo del design-system: gap → warning). */
+.respuesta {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: var(--surface-2);
+}
+
+.respuesta--ok {
+  border-left: 3px solid var(--success);
+}
+
+.respuesta--gap {
+  border-left: 3px solid var(--warning);
+}
+
+.respuesta__estado {
+  margin-bottom: 12px;
+}
+
+.respuesta__texto {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.respuesta__texto--muted {
+  color: var(--text-muted);
+}
+
+.respuesta__fuentes {
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+/* <summary> del <details> de fuentes: colapsado por defecto (regla del usuario). */
+.respuesta__fuentes-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.respuesta__fuentes[open] .respuesta__fuentes-titulo {
+  margin-bottom: 12px;
+}
+
+/* Chip de cita: chunk-id en mono (regla del design-system). */
+.cita-chip {
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* Spinner: rotación simple, sin florituras. El icono ya trae el trazo fino. */
+.spinner {
+  animation: girar 0.8s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
+
+/* Aviso de carga mientras se espera al rerank + LLM (puede tardar varios segundos
+   con el reranker grande en CPU). Color muted: es información, no un estado semántico. */
+.cargando {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.cargando .spinner {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.cargando__texto {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
 }
