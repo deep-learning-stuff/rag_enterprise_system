@@ -33,7 +33,9 @@ services:
   # equipo. En una máquina con más RAM (o GPU) se pone el grande vía RERANKER_MODEL
   # en el .env (ver README). El backend no se entera: solo cambia qué modelo sirve TEI.
   reranker:
-    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.7
+    # cpu-1.9 (más nueva que la de embeddings): el modelo grande no trae ONNX, así que
+    # TEI cae a su backend nativo Candle, y en 1.7 eso segfaultea (Intel MKL / SGEMM).
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9
     command:
       - "--model-id"
       - "${RERANKER_MODEL:-cross-encoder/mmarco-mMiniLMv2-L12-H384-v1}"
@@ -50,6 +52,9 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rag}:${POSTGRES_PASSWORD:-rag}@db:5432/${POSTGRES_DB:-rag}
       EMBEDDINGS_URL: http://embeddings:80
       RERANKER_URL: http://reranker:80
+      # Tamaño de ventana de rerank. Debe ir acorde al modelo que sirve el reranker:
+      # ~450 con el ligero (512 tokens), ~7000 con bge-reranker-v2-m3 (8192).
+      RERANKER_WINDOW_TOKENS: ${RERANKER_WINDOW_TOKENS:-450}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:

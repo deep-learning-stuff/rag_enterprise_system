@@ -32,6 +32,14 @@ class Chunk(Base):
     )
     # Full-text en español, generado por Postgres a partir de `texto` (no se escribe
     # a mano). Se usa para la búsqueda por palabras clave, complementaria a la vectorial.
+    # Se indexa con DOS configuraciones a la vez: `spanish` aporta la coincidencia entre
+    # singular y plural, y `spanish_unaccent` (migración 0006) la tolerancia a las
+    # tildes. Cada una rompe casos que la otra cubre, de ahí la unión. La consulta debe
+    # combinar las dos igual (ver retrieval/search.py) o no encontrará la mitad.
     tsv: Mapped[str | None] = mapped_column(
-        TSVECTOR, Computed("to_tsvector('spanish', texto)", persisted=True)
+        TSVECTOR,
+        Computed(
+            "to_tsvector('spanish', texto) || to_tsvector('spanish_unaccent', texto)",
+            persisted=True,
+        ),
     )

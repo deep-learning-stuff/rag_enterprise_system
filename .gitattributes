@@ -1,0 +1,27 @@
+# Finales de línea.
+#
+# Windows termina las líneas con CRLF (\r\n) y Linux con LF (\n). Los ficheros que
+# EJECUTA Linux (los contenedores Docker lo son por dentro) tienen que ir en LF: si
+# llevan CRLF, el shell lee el \r como parte del comando y falla con errores del tipo
+# `$'\r': command not found` o `No such option '--reload\r'`.
+#
+# Con git config core.autocrlf=true (habitual en Windows) Git convierte a CRLF al
+# clonar. Estas reglas mandan sobre esa conversión para los ficheros que lo necesitan.
+
+# Por defecto: Git normaliza a LF en el repositorio y decide en el disco local.
+* text=auto
+
+# Ficheros que ejecuta Linux dentro de los contenedores: SIEMPRE LF.
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.Dockerfile text eol=lf
+entrypoint.sh text eol=lf
+
+# Ficheros propios de Windows: siempre CRLF.
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# Binarios: que Git no toque nada.
+*.png       binary
+*.jpg       binary
+*.pdf       binary

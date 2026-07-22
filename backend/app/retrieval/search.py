@@ -11,7 +11,8 @@ Pasos:
 from dataclasses import dataclass
 
 import numpy as np
-from sqlalchemy import func, select
+from sqlalchemy import Text, func, select
+from sqlalchemy.dialects.postgresql import TSQUERY
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -54,9 +55,38 @@ def vector_search(db: Session, query_vec: list[float], k: int) -> list[Chunk]:
     )
 
 
+def _or_tsquery(config: str, query: str):
+    """tsquery de `query` con sus términos unidos por OR en lugar de por AND.
+
+    `plainto_tsquery` los une con `&`, lo que exige que TODAS las palabras estén en el
+    chunk. Como una pregunta trae palabras que el documento no usa ("fórmula", "cómo"),
+    el AND no casaba casi nunca y esta vía devolvía cero. Con OR basta con que coincidan
+    algunas, y `ts_rank` ordena por cuántas y con qué peso. Los conectores no ensucian:
+    la configuración española ya los descarta como stop words antes de llegar aquí.
+
+    La sustitución de `&` por `|` se hace sobre la SALIDA de `plainto_tsquery`, no sobre
+    el texto del usuario: así se conserva su parseo, stemming y saneado (construir un
+    tsquery concatenando la entrada a mano sería una vía de inyección).
+    """
+    return func.replace(
+        func.plainto_tsquery(config, query).cast(Text), "&", "|"
+    ).cast(TSQUERY)
+
+
 def fulltext_search(db: Session, query: str, k: int) -> list[Chunk]:
-    """Top-K chunks por coincidencia full-text (tsvector + índice GIN)."""
-    tsquery = func.plainto_tsquery("spanish", query)
+    """Top-K chunks por coincidencia full-text (tsvector + índice GIN).
+
+    Se consulta con las dos configuraciones unidas (`||` sobre tsquery es un OR), las
+    mismas con las que se genera `tsv`: `spanish` casa singular con plural y
+    `spanish_unaccent` tolera la falta de tildes. Cada una cubre casos que la otra
+    rompe; el porqué está detallado en la migración 0006.
+
+    Si la pregunta es solo stop words, `plainto_tsquery` devuelve una tsquery vacía que
+    no casa con nada: la consulta sale con 0 filas, que es justo lo que se quiere.
+    """
+    tsquery = _or_tsquery("spanish", query).op("||")(
+        _or_tsquery("spanish_unaccent", query)
+    )
     return list(
         db.scalars(
             select(Chunk)

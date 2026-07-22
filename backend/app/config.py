@@ -39,11 +39,13 @@ class Settings(BaseSettings):
     reranker_window_tokens: int = 450
 
     # Umbral de abstención sobre el score del reranker: por debajo → gap ("no está en
-    # los documentos"). Con el rerank por ventanas, la señal separa limpio (relevante
-    # >= ~0.8, basura <= ~0.05), así que un umbral único basta y es robusto a escala
-    # (el reranker juzga relevancia real por par consulta-chunk, no depende de cuántos
-    # documentos haya). Valor de arranque, ajustable.
-    relevance_threshold: float = 0.5
+    # los documentos"). Calibrado con la batería de 56 preguntas sobre el corpus de
+    # Proyecto Desnudo: con bge-reranker-v2-m3 el ruido (preguntas sin respuesta en los
+    # documentos) puntúa <= ~0.04, mientras que los aciertos recuperables llegan a 0.6-
+    # 1.0. En 0.15 no se cuela ningún falso positivo y se recuperan las preguntas mal
+    # escritas que 0.5 descartaba de más. Reajustar cuando entre el corpus real (con
+    # más chunks compitiendo, los scores bajan). Valor calibrado, ajustable.
+    relevance_threshold: float = 0.15
 
 
 settings = Settings()
