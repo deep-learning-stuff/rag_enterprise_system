@@ -8,6 +8,8 @@ Pasos:
 5. Umbral: si ni el mejor supera el umbral → se devuelve vacío (abstención).
 """
 
+import logging
+import time
 from dataclasses import dataclass
 
 import numpy as np
@@ -19,6 +21,8 @@ from app.config import settings
 from app.embeddings import embedder
 from app.models.chunk import Chunk
 from app.reranking import reranker
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -112,10 +116,16 @@ def hybrid_search(db: Session, query: str) -> list[Candidate]:
     Devuelve los `final_n` chunks más relevantes por encima del umbral. Si ninguno lo
     supera, devuelve lista vacía (abstención: "no está en los documentos").
     """
+    # Traza de latencia por etapa: marcas de tiempo entre pasos para localizar dónde se
+    # va el tiempo del pipeline (embed vs. BD vs. rerank). Coste despreciable.
+    t0 = time.perf_counter()
     query_vec = embedder.embed([query])[0]
+    t_embed = time.perf_counter()
 
     vec_hits = vector_search(db, query_vec, settings.retrieval_k)
+    t_vec = time.perf_counter()
     text_hits = fulltext_search(db, query, settings.retrieval_k)
+    t_text = time.perf_counter()
 
     vector_rank = {c.id: i for i, c in enumerate(vec_hits, start=1)}
     text_rank = {c.id: i for i, c in enumerate(text_hits, start=1)}
@@ -129,7 +139,18 @@ def hybrid_search(db: Session, query: str) -> list[Candidate]:
     if not pool:
         return []
 
+    t_pre_rerank = time.perf_counter()
     rerank_scores = reranker.rerank(query, [c.texto for c in pool])
+    t_rerank = time.perf_counter()
+
+    logger.info(
+        "hybrid_search (ms): embed=%.0f vector=%.0f fulltext=%.0f rerank=%.0f | pool=%d",
+        (t_embed - t0) * 1000,
+        (t_vec - t_embed) * 1000,
+        (t_text - t_vec) * 1000,
+        (t_rerank - t_pre_rerank) * 1000,
+        len(pool),
+    )
     candidates = [
         Candidate(
             chunk=c,

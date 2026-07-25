@@ -1,7 +1,12 @@
+import logging
+import time
+
 import httpx
 
 from app.ingest.tokenizer import split_into_windows
 from app.reranking.base import Reranker
+
+logger = logging.getLogger(__name__)
 
 
 class TEIReranker(Reranker):
@@ -27,11 +32,14 @@ class TEIReranker(Reranker):
         self.base_url = base_url.rstrip("/")
         self.window_tokens = window_tokens
         self.batch_size = batch_size
-        self.timeout = timeout
+        # Cliente reutilizado (keep-alive), igual que en el embedder: evita abrir un
+        # socket nuevo por cada sublote de rerank. Thread-safe, compartible entre hilos.
+        self._client = httpx.Client(base_url=self.base_url, timeout=timeout)
 
     def rerank(self, query: str, texts: list[str]) -> list[float]:
         # Se aplana cada texto en sus ventanas, recordando a qué texto pertenece cada
         # una; tras puntuarlas todas, cada texto se queda con el score máximo.
+        t0 = time.perf_counter()
         windows: list[str] = []
         owner: list[int] = []
         for i, text in enumerate(texts):
@@ -45,6 +53,17 @@ class TEIReranker(Reranker):
         for i, s in zip(owner, win_scores):
             if s > scores[i]:
                 scores[i] = s
+
+        # Traza para diagnosticar la latencia del rerank: nº de ventanas = pasadas reales
+        # del modelo. Si ventanas≈textos pero el tiempo es alto, el coste es POR PASADA
+        # (modelo pesado en CPU → mirar ONNX/int8); si ventanas≫textos, el coste es el
+        # NÚMERO de pasadas (→ mirar rerank_pool / tamaño de ventana).
+        logger.info(
+            "rerank: %d textos → %d ventanas en %.0f ms",
+            len(texts),
+            len(windows),
+            (time.perf_counter() - t0) * 1000,
+        )
         return [s if s != float("-inf") else 0.0 for s in scores]
 
     def _score(self, query: str, texts: list[str]) -> list[float]:
@@ -54,10 +73,9 @@ class TEIReranker(Reranker):
         scores = [0.0] * len(texts)
         for start in range(0, len(texts), self.batch_size):
             batch = texts[start : start + self.batch_size]
-            resp = httpx.post(
-                f"{self.base_url}/rerank",
+            resp = self._client.post(
+                "/rerank",
                 json={"query": query, "texts": batch, "truncate": True},
-                timeout=self.timeout,
             )
             resp.raise_for_status()
             for item in resp.json():
