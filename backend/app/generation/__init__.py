@@ -6,7 +6,13 @@ LLM_MODEL), igual que el reranker con RERANKER_MODEL: cambiar de proveedor es
 cambiar una variable, no tocar código.
 """
 from app.config import settings
-from app.generation.base import ContextChunk, GenerationError, GenerationResult, Generator
+from app.generation.base import (
+    ContextChunk,
+    GenerationError,
+    GenerationResult,
+    Generator,
+    Turno,
+)
 from app.generation.gemini import GeminiGenerator
 from app.generation.openai import OpenAIGenerator
 
@@ -40,5 +46,6 @@ __all__ = [
     "GenerationError",
     "GenerationResult",
     "Generator",
+    "Turno",
     "generator",
 ]

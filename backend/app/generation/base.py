@@ -25,6 +25,14 @@ class ContextChunk:
 
 
 @dataclass
+class Turno:
+    """Un turno del historial de chat (Fase C), para contextualizar un seguimiento."""
+
+    rol: str  # "usuario" | "asistente"
+    texto: str
+
+
+@dataclass
 class GenerationResult:
     """Salida estructurada del LLM, aún SIN validar contra el contexto."""
 
@@ -68,3 +76,20 @@ class Generator(ABC):
     @abstractmethod
     def generate(self, query: str, chunks: list[ContextChunk]) -> GenerationResult:
         """Genera la respuesta grounded a partir de la pregunta y los chunks dados."""
+
+    @abstractmethod
+    def generate_draft(self, pregunta: str, preguntas_relacionadas: list[str]) -> str:
+        """Genera el ESQUELETO Markdown de un documento que cubriría un gap.
+
+        No responde la pregunta ni inventa hechos: estructura el documento con
+        marcadores para que un humano lo complete (ver app.generation.draft).
+        """
+
+    @abstractmethod
+    def reescribir_consulta(self, mensaje: str, historial: list[Turno]) -> str:
+        """Reescribe un seguimiento como pregunta AUTÓNOMA usando el historial reciente.
+
+        No responde ni recupera nada: solo resuelve las referencias al contexto ("eso",
+        "y en 2023"...) para dejar una consulta que se entienda por sí sola (Fase C). Si
+        ya era autónoma, devuelve el mensaje tal cual.
+        """

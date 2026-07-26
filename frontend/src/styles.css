@@ -71,7 +71,22 @@ body {
 }
 
 .sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 0 12px;
+}
+
+.sidebar__logo {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.sidebar__brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .sidebar__title {
@@ -81,9 +96,12 @@ body {
 }
 
 .sidebar__subtitle {
-  margin: 2px 0 0;
+  margin: 1px 0 0;
   font-size: 12px;
   color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nav {
@@ -216,6 +234,33 @@ body {
   background: var(--accent-hover);
 }
 
+.btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Botón secundario: superficie + borde (design-system), para acciones no primarias. */
+.btn--secundario {
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.btn--secundario:hover {
+  background: var(--surface-2);
+}
+
+/* Descartar: secundario con texto de peligro, sin llenar de rojo la interfaz. */
+.btn--peligro {
+  color: var(--danger);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.btn--peligro:hover {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
 /* Tabla de documentos: densa y legible. */
 .tabla {
   width: 100%;
@@ -251,6 +296,23 @@ body {
 
 .fila--sel td {
   background: var(--accent-soft);
+}
+
+/* Fila-detalle desplegable: el editor de áreas + chunks del doc seleccionado, inline
+   justo debajo de su fila (para no bajar hasta el final de la tabla). */
+.fila-detalle:hover td {
+  background: var(--surface-2); /* neutraliza el hover de fila normal */
+}
+
+.detalle-celda {
+  padding: 0;
+  background: var(--surface-2);
+  /* Filo de acento a la izquierda: liga visualmente el detalle con su fila (seleccionada). */
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.detalle-doc {
+  padding: 16px;
 }
 
 /* Panel de inspección de chunks. */
@@ -333,6 +395,36 @@ body {
   color: var(--danger);
 }
 
+/* Estado editorial de un gap: borrador en curso → acento. */
+.pill--accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Varias pills juntas en una celda (estado + "quizá resuelto"). */
+.pills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Aviso de gap posiblemente cubierto por un documento nuevo (tras re-comprobar). */
+.aviso {
+  margin-top: 24px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: var(--surface-2);
+}
+
+.aviso__texto {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .mono {
   font-family: var(--font-mono);
 }
@@ -346,6 +438,53 @@ body {
   font-size: 14px;
   padding: 24px 0;
   text-align: center;
+}
+
+/* Control segmentado (filtro por estado en Gaps): botones planos sobre zona hundida. */
+.segmento {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.segmento__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.segmento__btn:hover {
+  color: var(--text);
+}
+
+/* Activo → acento sobre superficie elevada (mapeo del design-system: selección = acento). */
+.segmento__btn--activo {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.segmento__conteo {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.segmento__btn--activo .segmento__conteo {
+  color: var(--accent);
 }
 
 /* Detalle técnico del error en mono, como el resto de datos técnicos. */
@@ -555,4 +694,739 @@ body {
   margin: 0;
   font-size: 13px;
   line-height: 1.4;
+}
+
+/* Editor de borrador de un gap (mismo patrón de sección que .chunks). */
+.borrador {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.borrador__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.borrador__hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* El borrador es texto estructurado (Markdown con marcadores): mono para alinearlo. */
+.borrador__area {
+  width: 100%;
+  min-height: 320px;
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  resize: vertical;
+}
+
+.borrador__area:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Fila de acciones del borrador: primaria + secundarias, con hueco a la derecha. */
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.acciones__sep {
+  flex: 1;
+}
+
+/* Aviso de gap ya resuelto (ingerido). Verde: contenido que ya está en la base. */
+.borrador__resuelto {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* Vista renderizada del borrador (modo Rellenar): mismo marco que el textarea. */
+.borrador__vista {
+  min-height: 320px;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+/* Markdown renderizado: solo el subconjunto que generan los borradores. */
+.md {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.md-h1 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 4px 0 8px;
+}
+
+.md-h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+
+.md-h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 12px 0 4px;
+  color: var(--text-muted);
+}
+
+.md ul {
+  margin: 6px 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.md p {
+  margin: 8px 0;
+}
+
+.md hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+/* Marcador [COMPLETAR: …] en solo lectura → chip de acento (lo que falta por rellenar). */
+.marcador {
+  padding: 1px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+}
+
+/* Campo para rellenar un hueco (modo Rellenar): input inline resaltado en acento. */
+.campo {
+  font: inherit;
+  font-size: 13px;
+  padding: 2px 8px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  min-width: 200px;
+  vertical-align: baseline;
+}
+
+.campo::placeholder {
+  color: var(--accent);
+  opacity: 0.75;
+}
+
+.campo:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+/* Pantallas de autenticación (login, aceptar invitación): tarjeta centrada en el lienzo. */
+.auth {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.auth__card {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 32px;
+}
+
+.auth__brand {
+  margin-bottom: 8px;
+}
+
+.auth__logo {
+  display: inline-flex;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.auth__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.auth__subtitle {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.auth__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.auth__btn {
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.auth__cargando {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.auth__cargando .spinner {
+  color: var(--accent);
+}
+
+/* Pie de la sidebar: usuario en sesión + salir. Empujado al fondo con margin-top:auto. */
+.sidebar__foot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.sidebar__user {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.sidebar__user strong {
+  display: block;
+  color: var(--text);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.sidebar__rol {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.sidebar__salir {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.sidebar__salir:hover {
+  color: var(--text);
+}
+
+/* En móvil la sidebar es una barra superior: el pie no debe empujar. */
+@media (max-width: 720px) {
+  .sidebar__foot {
+    margin-top: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+/* Panel de gestión: formulario de alta en filas. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.form__fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.form__fila .buscador__input,
+.form__fila .select {
+  flex: 1;
+  min-width: 160px;
+}
+
+/* Desplegable con el mismo marco que los inputs del design-system. */
+.select {
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Botón compacto para acciones en fila de tabla. */
+.btn--sm {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.acciones-fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Caja del enlace de invitación: dato técnico (mono) + copiar. Acento a la izquierda. */
+.enlace {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 16px;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+}
+
+.enlace__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.enlace__label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.enlace__url {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  word-break: break-all;
+}
+
+/* --- Chat (Fase C) --- */
+/* El chat ocupa toda la altura del contenido y es UNA sola tarjeta: la lista y
+   el hilo se separan con una divisoria interna, no con cajas anidadas. Así deja
+   de parecer un widget incrustado y se lee como una pantalla propia. */
+.panel--chat {
+  max-width: 1080px;
+  height: calc(100vh - 64px); /* 100vh menos el padding vertical de .content */
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* La cabecera se ancla arriba, separada del cuerpo por una hairline. */
+.panel--chat .panel__header {
+  margin-bottom: 0;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chat {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 248px 1fr;
+}
+
+/* Lista de conversaciones: columna hundida con scroll propio y divisoria a la
+   derecha (una sola línea, sin borde envolvente). */
+.chat__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  padding: 12px 8px;
+  background: var(--surface-2);
+  border-right: 1px solid var(--border);
+}
+
+.chat__lista-vacia {
+  margin: 0;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.chat__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.chat__item:hover {
+  background: var(--surface);
+}
+
+.chat__item--activa {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.chat__item-titulo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* La papelera se revela al pasar por encima del item (menos ruido visual). */
+.chat__item-borrar {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  opacity: 0;
+}
+
+.chat__item:hover .chat__item-borrar {
+  opacity: 1;
+}
+
+.chat__item-borrar:hover {
+  color: var(--danger);
+}
+
+/* Hilo: mensajes con scroll + caja de entrada fija abajo. Sin borde propio: ya
+   vive dentro de la tarjeta del chat, separado de la lista por la divisoria. */
+.chat__hilo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.chat__mensajes {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chat__cargando {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+  color: var(--accent);
+}
+
+/* Un mensaje: burbuja + (en el usuario) nota de interpretación. */
+.msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 85%;
+}
+
+.msg--usuario {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.msg--asistente {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.msg__burbuja {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* Usuario → acento suave; asistente → superficie con borde (mapeo del design-system). */
+.msg--usuario .msg__burbuja {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.msg--asistente .msg__burbuja {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+/* Abstención: borde ámbar a la izquierda (gap → warning). */
+.msg__burbuja--gap {
+  border-left: 3px solid var(--warning);
+}
+
+.msg__abstencion {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.msg__burbuja--pensando {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+/* Cursor de escritura del asistente: caret fino que parpadea mientras revela. */
+.msg__cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: var(--accent);
+  animation: parpadeo 1s steps(2, start) infinite;
+}
+
+@keyframes parpadeo {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg__cursor {
+    display: none;
+  }
+}
+
+/* Transparencia de la contextualización: con qué pregunta autónoma se recuperó. */
+.msg__nota {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Caja de entrada: textarea + enviar, pegada al fondo del hilo. */
+.chat__input {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.chat__textarea {
+  flex: 1;
+  resize: none;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.chat__textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.chat__enviar {
+  padding: 10px 14px;
+}
+
+/* En estrecho, la lista pasa arriba como tira horizontal y el hilo ocupa el resto. */
+@media (max-width: 720px) {
+  .panel--chat {
+    height: calc(100vh - 64px);
+  }
+
+  .chat {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .chat__lista {
+    flex-direction: row;
+    gap: 6px;
+    max-height: 96px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+/* Grupo de usuarios por empresa (vista de superadmin). */
+.panel__grupo {
+  margin-top: 24px;
+}
+
+.panel__grupo-titulo {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Chips seleccionables de áreas: pill con borde; seleccionada → acento (design-system). */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 12px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.chip--sel {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.chip--sel:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Zona de subida de documentos: elegir áreas + botón. Superficie hundida con borde. */
+.subir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.subir__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.subir__hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* Label-botón cuya acción está vetada (no hay áreas elegidas): mismo dim que :disabled. */
+.btn--desactivado {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.btn--desactivado:hover {
+  background: var(--accent);
+}
+
+/* Editor de áreas de un documento seleccionado (encima de los chunks). */
+.editor-areas {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Lista de áreas de la empresa (crear/renombrar). */
+.lista-areas {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lista-areas__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.lista-areas__nombre {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.lista-areas__item .buscador__input {
+  flex: 1;
 }

@@ -17,6 +17,10 @@ class QueryLog(Base):
     __tablename__ = "query_logs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # Empresa (tenant) que hizo la consulta. Ver modelo Empresa.
+    empresa_id: Mapped[int] = mapped_column(
+        ForeignKey("empresas.id", ondelete="CASCADE"), index=True
+    )
     pregunta: Mapped[str] = mapped_column(Text)
     answered: Mapped[bool] = mapped_column(Boolean)
     reason: Mapped[str | None] = mapped_column(String(32), nullable=True)

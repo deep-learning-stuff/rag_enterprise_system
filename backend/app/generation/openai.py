@@ -13,8 +13,14 @@ from app.generation.base import (
     GenerationError,
     GenerationResult,
     Generator,
+    Turno,
     parse_result,
 )
+from app.generation.contextualize import (
+    CONTEXTUALIZE_SYSTEM_PROMPT,
+    build_contextualize_prompt,
+)
+from app.generation.draft import DRAFT_SYSTEM_PROMPT, build_draft_prompt
 from app.generation.prompt import SYSTEM_PROMPT, build_user_prompt
 
 # JSON Schema estricto que replica el contrato de base.parse_result.
@@ -70,3 +76,65 @@ class OpenAIGenerator(Generator):
             # `content` llega null si el modelo rehúsa (campo `refusal`).
             raise ValueError(f"OpenAI no devolvió contenido: {data!r}")
         return parse_result(text)
+
+    def generate_draft(self, pregunta: str, preguntas_relacionadas: list[str]) -> str:
+        if not self.api_key:
+            raise GenerationError("OPENAI_API_KEY no configurada (ver .env.example)")
+
+        # Salida en texto plano (Markdown): sin response_format, a diferencia de la
+        # respuesta grounded que fuerza JSON.
+        resp = httpx.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {self.api_key}"},
+            json={
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": DRAFT_SYSTEM_PROMPT},
+                    {
+                        "role": "user",
+                        "content": build_draft_prompt(pregunta, preguntas_relacionadas),
+                    },
+                ],
+            },
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        try:
+            text = data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError) as exc:
+            raise ValueError(f"respuesta de OpenAI sin contenido: {data!r}") from exc
+        if text is None:
+            raise ValueError(f"OpenAI no devolvió contenido: {data!r}")
+        return text
+
+    def reescribir_consulta(self, mensaje: str, historial: list[Turno]) -> str:
+        if not self.api_key:
+            raise GenerationError("OPENAI_API_KEY no configurada (ver .env.example)")
+
+        # Texto plano (la pregunta reescrita), sin response_format.
+        resp = httpx.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {self.api_key}"},
+            json={
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": CONTEXTUALIZE_SYSTEM_PROMPT},
+                    {
+                        "role": "user",
+                        "content": build_contextualize_prompt(mensaje, historial),
+                    },
+                ],
+            },
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        try:
+            text = data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError) as exc:
+            raise ValueError(f"respuesta de OpenAI sin contenido: {data!r}") from exc
+        # Si el modelo devuelve vacío, se cae al mensaje original (no reescribir es seguro).
+        return text.strip() if text else mensaje

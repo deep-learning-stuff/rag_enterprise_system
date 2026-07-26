@@ -20,6 +20,12 @@ class Chunk(Base):
     doc_id: Mapped[int] = mapped_column(
         ForeignKey("documents.id", ondelete="CASCADE"), index=True
     )
+    # Empresa (tenant), denormalizada desde el documento: así el retrieval filtra por
+    # empresa sin JOIN y el índice puede pre-filtrar. La hereda del documento en la
+    # ingesta. Ver modelo Empresa.
+    empresa_id: Mapped[int] = mapped_column(
+        ForeignKey("empresas.id", ondelete="CASCADE"), index=True
+    )
     texto: Mapped[str] = mapped_column(Text)
     # Rango de páginas que abarca el chunk (iguales si vive en una sola página).
     page_start: Mapped[int | None] = mapped_column(Integer, nullable=True)

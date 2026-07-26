@@ -29,12 +29,19 @@ services:
 
   # Reranker: mismo software (TEI) pero otro modelo. Reordena los candidatos del
   # retrieval con más criterio y da una nota de relevancia para el umbral.
-  # Modelo configurable: por defecto uno ligero multilingüe que corre en cualquier
-  # equipo. En una máquina con más RAM (o GPU) se pone el grande vía RERANKER_MODEL
-  # en el .env (ver README). El backend no se entera: solo cambia qué modelo sirve TEI.
+  # Modelo configurable por RERANKER_MODEL en el .env; el backend no se entera.
+  #
+  # IMPORTANTE (imagen CPU): esta imagen sirve los rerankers vía ONNX Runtime, así que el
+  # modelo DEBE traer un onnx/model.onnx en su repo. Los que solo traen safetensors fallan
+  # al arrancar (no hay fallback a Candle en CPU). Por eso se usan repos ...-ONNX.
+  #   - Actual (CPU):  onnx-community/gte-multilingual-reranker-base  (~306M, rápido, Apache-2.0)
+  #   - Alt. CPU:      onnx-community/bge-reranker-v2-m3-ONNX  (más preciso, ~2.3x más lento)
+  #
+  # Si algún día hay GPU: cambiar esta imagen a un tag de GPU (p.ej. turing-1.9 / 86-1.9 /
+  # hopper-1.9 según la tarjeta) + añadir el passthrough de GPU (deploy.resources...devices,
+  # driver nvidia). En GPU TEI usa Candle+CUDA y carga safetensors directamente, así que se
+  # puede poner el modelo grande y preciso BAAI/bge-reranker-v2-m3 SIN ONNX ni hacks.
   reranker:
-    # cpu-1.9 (más nueva que la de embeddings): el modelo grande no trae ONNX, así que
-    # TEI cae a su backend nativo Candle, y en 1.7 eso segfaultea (Intel MKL / SGEMM).
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9
     command:
       - "--model-id"
@@ -60,6 +67,11 @@ services:
       LLM_MODEL: ${LLM_MODEL:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # El --reload de uvicorn vigila /app con watchfiles vía inotify. Sobre el bind
+      # mount en Docker Desktop/WSL2 eso agota los watchers del kernel y el reloader
+      # muere ("Cannot allocate memory / os error 12"), dejando de recargar los cambios.
+      # Con polling watchfiles sondea los ficheros y esquiva inotify por completo.
+      WATCHFILES_FORCE_POLLING: "true"
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:

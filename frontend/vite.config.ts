@@ -17,10 +17,15 @@ export default defineConfig({
     // backend: así el fetch funciona sin CORS ni URLs hardcodeadas.
     proxy: {
       "/health": backendUrl,
+      "/auth": backendUrl,
+      "/empresas": backendUrl,
+      "/usuarios": backendUrl,
+      "/areas": backendUrl,
       "/documents": backendUrl,
       "/search": backendUrl,
       "/answer": backendUrl,
       "/gaps": backendUrl,
+      "/conversaciones": backendUrl,
     },
   },
 });

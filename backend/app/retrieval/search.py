@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.embeddings import embedder
+from app.models.area import documento_area
 from app.models.chunk import Chunk
 from app.reranking import reranker
 
@@ -47,16 +48,41 @@ def _cosine(a: list[float], b) -> float:
     return float(va @ vb / denom) if denom else 0.0
 
 
-def vector_search(db: Session, query_vec: list[float], k: int) -> list[Chunk]:
-    """Top-K chunks por similitud coseno (pgvector + índice HNSW)."""
-    return list(
-        db.scalars(
-            select(Chunk)
-            .where(Chunk.embedding.isnot(None))
-            .order_by(Chunk.embedding.cosine_distance(query_vec))
-            .limit(k)
-        )
+def _en_areas(area_ids: list[int]):
+    """Condición SQL: el documento del chunk pertenece a alguna de esas áreas (EXISTS).
+
+    Con la relación N:M documento<->área, restringe el retrieval a los documentos visibles
+    para el usuario sin traerse una lista de ids a mano.
+    """
+    return (
+        select(documento_area.c.documento_id)
+        .where(documento_area.c.documento_id == Chunk.doc_id)
+        .where(documento_area.c.area_id.in_(area_ids))
+        .exists()
     )
+
+
+def vector_search(
+    db: Session,
+    query_vec: list[float],
+    k: int,
+    empresa_id: int,
+    area_ids: list[int] | None = None,
+) -> list[Chunk]:
+    """Top-K chunks por similitud coseno (pgvector + índice HNSW), SOLO de la empresa.
+
+    Si `area_ids` no es None, además restringe a documentos de esas áreas (None = admin,
+    sin restricción).
+    """
+    stmt = (
+        select(Chunk)
+        .where(Chunk.empresa_id == empresa_id)
+        .where(Chunk.embedding.isnot(None))
+    )
+    if area_ids is not None:
+        stmt = stmt.where(_en_areas(area_ids))
+    stmt = stmt.order_by(Chunk.embedding.cosine_distance(query_vec)).limit(k)
+    return list(db.scalars(stmt))
 
 
 def _or_tsquery(config: str, query: str):
@@ -77,8 +103,14 @@ def _or_tsquery(config: str, query: str):
     ).cast(TSQUERY)
 
 
-def fulltext_search(db: Session, query: str, k: int) -> list[Chunk]:
-    """Top-K chunks por coincidencia full-text (tsvector + índice GIN).
+def fulltext_search(
+    db: Session,
+    query: str,
+    k: int,
+    empresa_id: int,
+    area_ids: list[int] | None = None,
+) -> list[Chunk]:
+    """Top-K chunks por coincidencia full-text (tsvector + índice GIN), SOLO de la empresa.
 
     Se consulta con las dos configuraciones unidas (`||` sobre tsquery es un OR), las
     mismas con las que se genera `tsv`: `spanish` casa singular con plural y
@@ -91,14 +123,15 @@ def fulltext_search(db: Session, query: str, k: int) -> list[Chunk]:
     tsquery = _or_tsquery("spanish", query).op("||")(
         _or_tsquery("spanish_unaccent", query)
     )
-    return list(
-        db.scalars(
-            select(Chunk)
-            .where(Chunk.tsv.op("@@")(tsquery))
-            .order_by(func.ts_rank(Chunk.tsv, tsquery).desc())
-            .limit(k)
-        )
+    stmt = (
+        select(Chunk)
+        .where(Chunk.empresa_id == empresa_id)
+        .where(Chunk.tsv.op("@@")(tsquery))
     )
+    if area_ids is not None:
+        stmt = stmt.where(_en_areas(area_ids))
+    stmt = stmt.order_by(func.ts_rank(Chunk.tsv, tsquery).desc()).limit(k)
+    return list(db.scalars(stmt))
 
 
 def reciprocal_rank_fusion(lists: list[list[Chunk]], k_const: int) -> dict[int, float]:
@@ -110,11 +143,17 @@ def reciprocal_rank_fusion(lists: list[list[Chunk]], k_const: int) -> dict[int, 
     return scores
 
 
-def hybrid_search(db: Session, query: str) -> list[Candidate]:
+def hybrid_search(
+    db: Session, query: str, empresa_id: int, area_ids: list[int] | None = None
+) -> list[Candidate]:
     """Pipeline completo: recupera, fusiona, reranquea y aplica el umbral.
 
     Devuelve los `final_n` chunks más relevantes por encima del umbral. Si ninguno lo
     supera, devuelve lista vacía (abstención: "no está en los documentos").
+
+    `empresa_id` es OBLIGATORIO y acota TODO el retrieval a esa empresa (invariante de
+    aislamiento: una empresa nunca recupera chunks de otra). `area_ids` restringe además
+    a documentos de esas áreas (None = sin restricción, p.ej. admin).
     """
     # Traza de latencia por etapa: marcas de tiempo entre pasos para localizar dónde se
     # va el tiempo del pipeline (embed vs. BD vs. rerank). Coste despreciable.
@@ -122,9 +161,9 @@ def hybrid_search(db: Session, query: str) -> list[Candidate]:
     query_vec = embedder.embed([query])[0]
     t_embed = time.perf_counter()
 
-    vec_hits = vector_search(db, query_vec, settings.retrieval_k)
+    vec_hits = vector_search(db, query_vec, settings.retrieval_k, empresa_id, area_ids)
     t_vec = time.perf_counter()
-    text_hits = fulltext_search(db, query, settings.retrieval_k)
+    text_hits = fulltext_search(db, query, settings.retrieval_k, empresa_id, area_ids)
     t_text = time.perf_counter()
 
     vector_rank = {c.id: i for i, c in enumerate(vec_hits, start=1)}

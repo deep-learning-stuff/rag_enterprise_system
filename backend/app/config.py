@@ -39,13 +39,18 @@ class Settings(BaseSettings):
     reranker_window_tokens: int = 450
 
     # Umbral de abstención sobre el score del reranker: por debajo → gap ("no está en
-    # los documentos"). Calibrado con la batería de 56 preguntas sobre el corpus de
-    # Proyecto Desnudo: con bge-reranker-v2-m3 el ruido (preguntas sin respuesta en los
-    # documentos) puntúa <= ~0.04, mientras que los aciertos recuperables llegan a 0.6-
-    # 1.0. En 0.15 no se cuela ningún falso positivo y se recuperan las preguntas mal
-    # escritas que 0.5 descartaba de más. Reajustar cuando entre el corpus real (con
-    # más chunks compitiendo, los scores bajan). Valor calibrado, ajustable.
-    relevance_threshold: float = 0.15
+    # los documentos"). CALIBRADO PARA gte-multilingual-reranker-base (el reranker actual;
+    # sus scores son más bajos que los de bge-reranker-v2-m3, que usaba ~0.15).
+    # Batería sobre el corpus de Proyecto Desnudo (22 respondibles + 11 de ruido):
+    #   - respondibles: 0.53 a 0.97
+    #   - ruido: casi todo <0.08, con 3 borderline fuera de dominio hasta 0.40
+    #   - hueco limpio entre 0.40 (ruido más alto) y 0.53 (respondible más baja)
+    # 0.42 cae en ese hueco: retiene las 22 respondibles y rechaza todo el ruido, con
+    # margen amplio del lado de las respondibles (el error caro es rechazar una respuesta
+    # buena; un ruido que se cuele lo caza igual la abstención del LLM). Reajustar al
+    # crecer el corpus (más chunks compitiendo → los scores bajan). Si se vuelve a bge,
+    # recalibrar (rondaba 0.15). Valor calibrado, ajustable.
+    relevance_threshold: float = 0.42
 
     # Generación (Fase 5). LLM en la nube, configurable por proveedor igual que el
     # reranker: cambiar de proveedor/modelo es cambiar el .env, no el código.
@@ -63,6 +68,16 @@ class Settings(BaseSettings):
     # a similitud ~0.92). Punto de arranque, NO calibrado con datos reales todavía (a
     # diferencia de `relevance_threshold`) — reajustar cuando haya gaps de verdad.
     gap_max_distance: float = 0.08
+
+    # Auth / sesiones (Fase B). La empresa ya no viene por cabecera: sale del usuario
+    # autenticado (ver app.deps.get_empresa_id).
+    session_cookie_name: str = "session"
+    session_ttl_hours: int = 24 * 7  # duración de una sesión
+    invite_ttl_hours: int = 24 * 7  # caducidad de una invitación (7 días)
+    password_min_length: int = 8  # longitud mínima al fijar contraseña
+    # Marcar la cookie como Secure (solo HTTPS). False en desarrollo local (http);
+    # poner a True en producción.
+    cookie_secure: bool = False
 
 
 settings = Settings()

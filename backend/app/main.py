@@ -3,13 +3,27 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.routers import documents, gaps, search
+from app.routers import (
+    areas,
+    auth,
+    chat,
+    documents,
+    empresas,
+    gaps,
+    search,
+    usuarios,
+)
 
 app = FastAPI(title="RAG interno — esqueleto")
 
+app.include_router(auth.router)
+app.include_router(empresas.router)
+app.include_router(usuarios.router)
+app.include_router(areas.router)
 app.include_router(documents.router)
 app.include_router(search.router)
 app.include_router(gaps.router)
+app.include_router(chat.router)
 
 
 @app.get("/health")

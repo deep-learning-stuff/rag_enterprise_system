@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.deps import get_empresa_id, get_restriccion_areas
 from app.generation import GenerationError
 from app.retrieval.search import Candidate, hybrid_search
 from app.schemas import AnswerOut, SearchQuery, SearchResultOut
@@ -28,20 +29,30 @@ def _to_result_out(c: Candidate) -> SearchResultOut:
 
 
 @router.post("/search", response_model=list[SearchResultOut])
-def search(body: SearchQuery, db: Session = Depends(get_db)) -> list[SearchResultOut]:
+def search(
+    body: SearchQuery,
+    empresa_id: int = Depends(get_empresa_id),
+    area_ids: list[int] | None = Depends(get_restriccion_areas),
+    db: Session = Depends(get_db),
+) -> list[SearchResultOut]:
     """Recuperación híbrida (vectorial + full-text + RRF). Devuelve candidatos crudos,
     sin generar respuesta: sirve para inspeccionar y afinar el retrieval."""
-    return [_to_result_out(c) for c in hybrid_search(db, body.query)]
+    return [_to_result_out(c) for c in hybrid_search(db, body.query, empresa_id, area_ids)]
 
 
 @router.post("/answer", response_model=AnswerOut)
-def answer(body: SearchQuery, db: Session = Depends(get_db)) -> AnswerOut:
+def answer(
+    body: SearchQuery,
+    empresa_id: int = Depends(get_empresa_id),
+    area_ids: list[int] | None = Depends(get_restriccion_areas),
+    db: Session = Depends(get_db),
+) -> AnswerOut:
     """Respuesta grounded (Fase 5): retrieval → LLM → validación de citas.
 
     Solo responde con lo que está en los documentos; si no, se abstiene y `reason`
     indica el motivo (ver `AnswerOut`)."""
     try:
-        data = answer_query(db, body.query)
+        data = answer_query(db, body.query, empresa_id, area_ids)
     except GenerationError as exc:
         # Configuración incompleta (p.ej. falta la API key): error del despliegue.
         raise HTTPException(status_code=503, detail=str(exc)) from exc
