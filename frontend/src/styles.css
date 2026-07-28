@@ -184,22 +184,28 @@ body {
   }
 }
 
-/* Panel: superficie plana + borde 1px, sin sombra (regla del design-system). */
+/* Pantalla integrada: NO es una tarjeta. Columna de trabajo a sangre sobre el
+   lienzo (sin fondo, borde ni sombra); el contenido se separa con hairlines, no
+   con cajas anidadas. Mismo lenguaje que el chat. */
 .panel {
   width: 100%;
-  max-width: 860px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 24px;
+  max-width: 1040px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
 }
 
+/* Cabecera plana: título + acciones, anclada arriba y separada del cuerpo por
+   una hairline (no un margen suelto). */
 .panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
 .panel__title {
@@ -347,14 +353,12 @@ body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
+/* Fila separada por hairline, sobre el fondo (sin caja rellena). */
 .chunk {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  background: var(--surface-2);
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
 }
 
 .chunk__meta {
@@ -409,14 +413,12 @@ body {
   align-items: center;
 }
 
-/* Aviso de gap posiblemente cubierto por un documento nuevo (tras re-comprobar). */
+/* Aviso de gap posiblemente cubierto por un documento nuevo (tras re-comprobar).
+   Callout integrado: solo filo de acento a la izquierda, sin caja rellena. */
 .aviso {
   margin-top: 24px;
-  border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  background: var(--surface-2);
+  padding: 4px 0 4px 16px;
 }
 
 .aviso__texto {
@@ -527,14 +529,12 @@ body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
+/* Fila separada por hairline, sobre el fondo (sin caja rellena). */
 .resultado {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  background: var(--surface-2);
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
 }
 
 .resultado__meta {
@@ -1021,17 +1021,15 @@ body {
   gap: 6px;
 }
 
-/* Caja del enlace de invitación: dato técnico (mono) + copiar. Acento a la izquierda. */
+/* Enlace de invitación: dato técnico (mono) + copiar. Callout integrado con filo
+   de acento a la izquierda, sin caja rellena. */
 .enlace {
   display: flex;
   align-items: center;
   gap: 12px;
   margin: 8px 0 16px;
-  padding: 12px 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  padding: 4px 0 4px 16px;
   border-left: 3px solid var(--accent);
-  border-radius: var(--radius-md);
 }
 
 .enlace__info {
@@ -1054,48 +1052,76 @@ body {
   word-break: break-all;
 }
 
-/* --- Chat (Fase C) --- */
-/* El chat ocupa toda la altura del contenido y es UNA sola tarjeta: la lista y
-   el hilo se separan con una divisoria interna, no con cajas anidadas. Así deja
-   de parecer un widget incrustado y se lee como una pantalla propia. */
-.panel--chat {
-  max-width: 1080px;
-  height: calc(100vh - 64px); /* 100vh menos el padding vertical de .content */
+/* --- Chat: transcripción editorial --- */
+/* El chat NO es una tarjeta: ocupa el área de contenido a sangre. Un raíl de
+   conversaciones prolonga la sidebar, y el hilo es una columna de lectura
+   centrada directamente sobre el lienzo: pregunta como titular con filo de
+   acento, respuesta como texto corrido, citas planas al pie. */
+.content:has(> .pantalla--chat:not([hidden])) {
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 
-/* La cabecera se ancla arriba, separada del cuerpo por una hairline. */
-.panel--chat .panel__header {
-  margin-bottom: 0;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border);
+.pantalla--chat {
+  align-items: stretch;
 }
 
 .chat {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: 248px 1fr;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  min-width: 0;
 }
 
-/* Lista de conversaciones: columna hundida con scroll propio y divisoria a la
-   derecha (una sola línea, sin borde envolvente). */
-.chat__lista {
+/* Raíl de conversaciones: mismo lenguaje que la nav, sobre el fondo, sin caja. */
+.chat__rail {
+  width: 232px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  overflow-y: auto;
-  padding: 12px 8px;
-  background: var(--surface-2);
+  padding: 16px 10px;
   border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.chat__nueva {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.chat__nueva:hover {
+  background: var(--surface-2);
+}
+
+.chat__nueva:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.chat__rail-label {
+  margin: 0 0 4px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .chat__lista-vacia {
   margin: 0;
-  padding: 12px;
+  padding: 0 10px;
   font-size: 13px;
   color: var(--text-muted);
 }
@@ -1116,7 +1142,7 @@ body {
 }
 
 .chat__item:hover {
-  background: var(--surface);
+  background: var(--surface-2);
 }
 
 .chat__item--activa {
@@ -1148,22 +1174,31 @@ body {
   color: var(--danger);
 }
 
-/* Hilo: mensajes con scroll + caja de entrada fija abajo. Sin borde propio: ya
-   vive dentro de la tarjeta del chat, separado de la lista por la divisoria. */
+/* Hilo: scroll de mensajes + pie con el composer. */
 .chat__hilo {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
 }
 
 .chat__mensajes {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 40px 24px 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+}
+
+/* Columna de lectura: ancho de texto cómodo, centrada en el espacio libre. */
+.chat__columna {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .chat__cargando {
@@ -1173,64 +1208,94 @@ body {
   color: var(--accent);
 }
 
-/* Un mensaje: burbuja + (en el usuario) nota de interpretación. */
-.msg {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-width: 85%;
+/* Estado vacío: centrado en el hueco del hilo. */
+.chat__vacio {
+  margin: auto;
+  max-width: 400px;
+  text-align: center;
 }
 
-.msg--usuario {
-  align-self: flex-end;
-  align-items: flex-end;
+.chat__vacio-titulo {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
 }
 
-.msg--asistente {
-  align-self: flex-start;
-  align-items: flex-start;
-}
-
-.msg__burbuja {
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
+.chat__vacio-texto {
+  margin: 0;
   font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* Turnos de la transcripción. La pregunta abre sección: se separa del turno
+   anterior con aire extra, y su respuesta queda pegada debajo. */
+.turno--pregunta {
+  margin-top: 28px;
+  border-left: 3px solid var(--accent);
+  padding-left: 14px;
+}
+
+.turno--pregunta:first-child {
+  margin-top: 0;
+}
+
+.turno__enunciado {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.5;
   white-space: pre-wrap;
 }
 
-/* Usuario → acento suave; asistente → superficie con borde (mapeo del design-system). */
-.msg--usuario .msg__burbuja {
-  background: var(--accent-soft);
-  color: var(--text);
+/* Transparencia de la contextualización: con qué pregunta autónoma se recuperó. */
+.turno__nota {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
-.msg--asistente .msg__burbuja {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+/* Respuesta: texto corrido sobre el lienzo, sin caja ni borde. */
+.turno__texto {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.65;
+  white-space: pre-wrap;
 }
 
-/* Abstención: borde ámbar a la izquierda (gap → warning). */
-.msg__burbuja--gap {
+/* Abstención: filo ámbar (gap → warning), texto atenuado, sin caja. */
+.turno--gap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   border-left: 3px solid var(--warning);
+  padding-left: 14px;
 }
 
-.msg__abstencion {
-  margin: 8px 0 0;
+.turno__abstencion {
+  margin: 0;
   font-size: 14px;
   line-height: 1.5;
   color: var(--text-muted);
 }
 
-.msg__burbuja--pensando {
+.turno__pensando {
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 14px;
   color: var(--text-muted);
 }
 
+.turno__pensando .spinner {
+  color: var(--accent);
+}
+
 /* Cursor de escritura del asistente: caret fino que parpadea mientras revela. */
-.msg__cursor {
+.turno__cursor {
   display: inline-block;
   width: 2px;
   height: 1em;
@@ -1247,67 +1312,172 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .msg__cursor {
+  .turno__cursor {
     display: none;
   }
 }
 
-/* Transparencia de la contextualización: con qué pregunta autónoma se recuperó. */
-.msg__nota {
-  margin: 0;
+/* Fuentes de una respuesta: sección plana, citas separadas por hairlines. */
+.fuentes {
+  margin-top: 12px;
+}
+
+.fuentes__titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.fuentes__lista {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.fuente {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.fuente__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
   font-size: 12px;
   color: var(--text-muted);
-  font-style: italic;
+  margin-bottom: 4px;
 }
 
-/* Caja de entrada: textarea + enviar, pegada al fondo del hilo. */
-.chat__input {
-  display: flex;
-  gap: 8px;
-  align-items: flex-end;
-  padding: 12px;
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.chat__textarea {
-  flex: 1;
-  resize: none;
-  padding: 10px 12px;
-  font: inherit;
-  font-size: 14px;
+/* El score del reranker es el que importa: se distingue solo por contraste. */
+.fuente__relevancia {
   color: var(--text);
+}
+
+.fuente__texto {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+/* Pie del hilo: el composer es la única "caja" legítima de la pantalla. */
+.chat__pie {
+  padding: 8px 24px 12px;
+}
+
+.composer {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 6px 6px 6px 14px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
 }
 
-.chat__textarea:focus {
-  outline: none;
+.composer:focus-within {
   border-color: var(--accent);
 }
 
-.chat__enviar {
-  padding: 10px 14px;
+.composer__campo {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  padding: 8px 0;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: none;
+  border: none;
 }
 
-/* En estrecho, la lista pasa arriba como tira horizontal y el hilo ocupa el resto. */
+.composer__campo:focus {
+  outline: none;
+}
+
+.composer__campo::placeholder {
+  color: var(--text-muted);
+}
+
+.composer__enviar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: #ffffff;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.composer__enviar:hover {
+  background: var(--accent-hover);
+}
+
+.composer__enviar:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.composer__hint {
+  max-width: 720px;
+  margin: 6px auto 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* En estrecho, el raíl pasa arriba como tira horizontal y el hilo ocupa el resto. */
 @media (max-width: 720px) {
-  .panel--chat {
-    height: calc(100vh - 64px);
-  }
-
   .chat {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    flex-direction: column;
+    height: calc(100dvh - 64px); /* aproximación de la barra superior */
   }
 
-  .chat__lista {
+  .chat__rail {
+    width: 100%;
     flex-direction: row;
+    align-items: center;
     gap: 6px;
-    max-height: 96px;
+    padding: 8px 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
     border-right: none;
     border-bottom: 1px solid var(--border);
+  }
+
+  .chat__nueva {
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .chat__rail-label {
+    display: none;
+  }
+
+  .chat__item {
+    flex-shrink: 0;
+    max-width: 200px;
+  }
+
+  .chat__mensajes {
+    padding: 24px 16px 12px;
+  }
+
+  .chat__pie {
+    padding: 8px 16px 12px;
   }
 }
 
@@ -1356,17 +1526,16 @@ body {
   border-color: var(--accent);
 }
 
-/* Zona de subida de documentos: elegir áreas + botón. Superficie hundida con borde. */
+/* Zona de subida de documentos: elegir áreas + botón. Fila plana separada del
+   resto por una hairline (sin caja rellena). */
 .subir {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
-  padding: 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
 .subir__label {
@@ -1408,17 +1577,15 @@ body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
+/* Fila separada por hairline, sobre el fondo (sin caja rellena). */
 .lista-areas__item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
 }
 
 .lista-areas__nombre {

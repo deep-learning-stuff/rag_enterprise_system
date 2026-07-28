@@ -145,8 +145,9 @@ export default function App() {
           CONSERVAR su estado al cambiar de pestaña. Buscar y Gaps se montan solo cuando
           están activas: así se REINICIAN cada vez que se sale de ellas. */}
       <main className="content">
+        {/* El chat va a sangre completa (sin padding del content): pantalla--chat. */}
         {puede("chat") && (
-          <div className="pantalla" hidden={pantallaActiva !== "chat"}>
+          <div className="pantalla pantalla--chat" hidden={pantallaActiva !== "chat"}>
             <Chat />
           </div>
         )}

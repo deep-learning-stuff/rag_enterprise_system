@@ -64,34 +64,36 @@ function TextoAnimado({
   return (
     <>
       {texto.slice(0, n)}
-      {escribiendo && <span className="msg__cursor" aria-hidden="true" />}
+      {escribiendo && <span className="turno__cursor" aria-hidden="true" />}
     </>
   );
 }
 
+// Fuentes de una respuesta: sección plana bajo el texto, cada cita separada por
+// una hairline (nada de mini-tarjetas anidadas).
 function Fuentes({ mensaje }: { mensaje: Mensaje }) {
   if (mensaje.citas.length === 0) return null;
   return (
-    <details className="respuesta__fuentes">
-      <summary className="respuesta__fuentes-titulo">
+    <details className="fuentes">
+      <summary className="fuentes__titulo">
         Fuentes <span className="chunks__count">{mensaje.citas.length}</span>
       </summary>
-      <ul className="resultados">
+      <ul className="fuentes__lista">
         {mensaje.citas.map((c) => (
-          <li key={c.chunk_id} className="resultado">
-            <div className="resultado__meta mono">
+          <li key={c.chunk_id} className="fuente">
+            <div className="fuente__meta mono">
               <span className="cita-chip">chunk {c.chunk_id}</span>
               <span>doc #{c.doc_id}</span>
               {rangoPaginas(c.page_start, c.page_end) && (
                 <span>{rangoPaginas(c.page_start, c.page_end)}</span>
               )}
               {c.rerank_score != null && (
-                <span className="via via--rerank">
+                <span className="fuente__relevancia">
                   relevancia {c.rerank_score.toFixed(3)}
                 </span>
               )}
             </div>
-            <p className="resultado__text">{c.texto}</p>
+            <p className="fuente__texto">{c.texto}</p>
           </li>
         ))}
       </ul>
@@ -99,7 +101,9 @@ function Fuentes({ mensaje }: { mensaje: Mensaje }) {
   );
 }
 
-function MensajeBurbuja({
+// Un turno de la transcripción. La pregunta se lee como titular de sección
+// (filo de acento); la respuesta es texto corrido sobre el lienzo, sin caja.
+function Turno({
   mensaje,
   animar,
   onTick,
@@ -110,10 +114,10 @@ function MensajeBurbuja({
 }) {
   if (mensaje.rol === "usuario") {
     return (
-      <div className="msg msg--usuario">
-        <div className="msg__burbuja">{mensaje.texto}</div>
+      <div className="turno turno--pregunta">
+        <p className="turno__enunciado">{mensaje.texto}</p>
         {mensaje.consulta_resuelta && (
-          <p className="msg__nota">Interpretado como: {mensaje.consulta_resuelta}</p>
+          <p className="turno__nota">Interpretado como: {mensaje.consulta_resuelta}</p>
         )}
       </div>
     );
@@ -121,25 +125,23 @@ function MensajeBurbuja({
   // Asistente: respuesta grounded o abstención.
   if (mensaje.answered) {
     return (
-      <div className="msg msg--asistente">
-        <div className="msg__burbuja">
+      <div className="turno turno--respuesta">
+        <p className="turno__texto">
           <TextoAnimado texto={mensaje.texto ?? ""} activo={animar} onTick={onTick} />
-        </div>
+        </p>
         <Fuentes mensaje={mensaje} />
       </div>
     );
   }
   return (
-    <div className="msg msg--asistente">
-      <div className="msg__burbuja msg__burbuja--gap">
-        <span className="pill pill--warning">
-          {mensaje.reason === "fuera_de_alcance" ? "sin acceso" : "no está en los documentos"}
-        </span>
-        <p className="msg__abstencion">
-          {MOTIVO_ABSTENCION[mensaje.reason ?? ""] ??
-            "No se ha podido responder con los documentos disponibles."}
-        </p>
-      </div>
+    <div className="turno turno--respuesta turno--gap">
+      <span className="pill pill--warning">
+        {mensaje.reason === "fuera_de_alcance" ? "sin acceso" : "no está en los documentos"}
+      </span>
+      <p className="turno__abstencion">
+        {MOTIVO_ABSTENCION[mensaje.reason ?? ""] ??
+          "No se ha podido responder con los documentos disponibles."}
+      </p>
     </div>
   );
 }
@@ -257,97 +259,96 @@ export default function Chat() {
   const hiloVacio = mensajes.length === 0 && !cargandoHilo && !enviando;
 
   return (
-    <section className="panel panel--chat">
-      <header className="panel__header">
-        <div>
-          <h1 className="panel__title">Chat</h1>
-          <p className="panel__subtitle">
-            Conversación sobre tus documentos, con memoria y citas
-          </p>
-        </div>
-        <button className="btn" type="button" onClick={nueva} disabled={activaId === null}>
-          <Plus size={16} strokeWidth={1.75} />
+    <section className="chat">
+      {/* Raíl de conversaciones: prolonga la sidebar, sobre el lienzo, sin caja. */}
+      <aside className="chat__rail">
+        <button
+          className="chat__nueva"
+          type="button"
+          onClick={nueva}
+          disabled={activaId === null}
+        >
+          <Plus size={15} strokeWidth={1.75} />
           Nueva conversación
         </button>
-      </header>
-
-      {error && <p className="error-detail">{error}</p>}
-
-      <div className="chat">
-        <aside className="chat__lista">
-          {conversaciones.length === 0 ? (
-            <p className="chat__lista-vacia">Aún no hay conversaciones.</p>
-          ) : (
-            conversaciones.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                className={`chat__item ${c.id === activaId ? "chat__item--activa" : ""}`}
-                onClick={() => seleccionar(c.id)}
+        <p className="chat__rail-label">Conversaciones</p>
+        {conversaciones.length === 0 ? (
+          <p className="chat__lista-vacia">Aún no hay conversaciones.</p>
+        ) : (
+          conversaciones.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`chat__item ${c.id === activaId ? "chat__item--activa" : ""}`}
+              onClick={() => seleccionar(c.id)}
+            >
+              <span className="chat__item-titulo">{c.titulo}</span>
+              <span
+                className="chat__item-borrar"
+                role="button"
+                tabIndex={-1}
+                title="Eliminar conversación"
+                onClick={(e) => borrar(e, c.id)}
               >
-                <span className="chat__item-titulo">{c.titulo}</span>
-                <span
-                  className="chat__item-borrar"
-                  role="button"
-                  tabIndex={-1}
-                  title="Eliminar conversación"
-                  onClick={(e) => borrar(e, c.id)}
-                >
-                  <Trash2 size={14} strokeWidth={1.75} />
-                </span>
-              </button>
-            ))
-          )}
-        </aside>
+                <Trash2 size={14} strokeWidth={1.75} />
+              </span>
+            </button>
+          ))
+        )}
+      </aside>
 
-        <div className="chat__hilo">
-          <div className="chat__mensajes">
+      {/* Hilo: columna de lectura centrada + composer anclado al pie. */}
+      <div className="chat__hilo">
+        <div className="chat__mensajes">
+          <div className="chat__columna">
+            {error && <p className="error-detail">{error}</p>}
+
             {cargandoHilo ? (
               <div className="chat__cargando">
                 <Loader2 size={18} strokeWidth={1.75} className="spinner" />
               </div>
             ) : hiloVacio ? (
-              <p className="empty">
-                Escribe abajo para empezar. Cada conversación recuerda el hilo y responde
-                solo con lo que hay en tus documentos.
-              </p>
+              <div className="chat__vacio">
+                <h2 className="chat__vacio-titulo">Pregunta a tus documentos</h2>
+                <p className="chat__vacio-texto">
+                  Cada conversación recuerda el hilo y responde solo con lo que hay en
+                  tu base de conocimiento, con citas a los documentos de origen.
+                </p>
+              </div>
             ) : (
               mensajes.map((m) => (
-                <MensajeBurbuja
-                  key={m.id}
-                  mensaje={m}
-                  animar={m.id === animarId}
-                  onTick={scrollFin}
-                />
+                <Turno key={m.id} mensaje={m} animar={m.id === animarId} onTick={scrollFin} />
               ))
             )}
 
             {enviando && pendiente && (
               <>
-                <div className="msg msg--usuario">
-                  <div className="msg__burbuja">{pendiente}</div>
+                <div className="turno turno--pregunta">
+                  <p className="turno__enunciado">{pendiente}</p>
                 </div>
-                <div className="msg msg--asistente">
-                  <div className="msg__burbuja msg__burbuja--pensando">
+                <div className="turno turno--respuesta">
+                  <p className="turno__pensando">
                     <Loader2 size={16} strokeWidth={1.75} className="spinner" />
                     Buscando en los documentos…
-                  </div>
+                  </p>
                 </div>
               </>
             )}
             <div ref={finRef} />
           </div>
+        </div>
 
+        <div className="chat__pie">
           <form
-            className="chat__input"
+            className="composer"
             onSubmit={(e) => {
               e.preventDefault();
               enviar();
             }}
           >
             <textarea
-              className="chat__textarea"
-              placeholder="Escribe tu pregunta… (Enter para enviar, Mayús+Enter para salto de línea)"
+              className="composer__campo"
+              placeholder="Pregunta a tus documentos…"
               value={borrador}
               onChange={(e) => setBorrador(e.target.value)}
               onKeyDown={onKeyDown}
@@ -355,8 +356,9 @@ export default function Chat() {
               disabled={enviando}
             />
             <button
-              className="btn chat__enviar"
+              className="composer__enviar"
               type="submit"
+              title="Enviar"
               disabled={enviando || !borrador.trim()}
             >
               {enviando ? (
@@ -366,6 +368,7 @@ export default function Chat() {
               )}
             </button>
           </form>
+          <p className="composer__hint">Enter envía · Mayús+Enter salto de línea</p>
         </div>
       </div>
     </section>
